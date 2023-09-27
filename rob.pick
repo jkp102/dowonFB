@@ -1,0 +1,134 @@
+.PROGRAM rob.pick_0()
+;
+; ABSTRACT:     Perform a pick operation at a static location
+;
+; INPUTS:       None
+;
+; OUTPUTS:      None
+;
+
+        GLOBAL LOC pick.loc[]
+
+        vac.off.count = 0
+
+
+        IF SIG(-i.po.switch) THEN
+            APPROS pick.loc[0], 50
+            SIGNAL -88, -81
+        ELSE
+            APPROS pick.loc[1], 50
+            SIGNAL -88, -81
+        END
+
+        TYPE " cycle = ", TIMER(3)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ 50     IF (NOT SIG(i.pick.ready)) OR (NOT SIG(i.auto.ready)) THEN
+            DO
+                IF NOT SIG(i.auto.ready) THEN
+                    GOTO 100
+                END
+                RELEASE
+            UNTIL SIG(i.pick.ready) AND SIG(i.auto.ready)
+        END
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+        TIMER (3) = 0
+
+
+; Approach and move to the location
+
+        ACCEL (1) 250, 250
+
+
+        IF SIG(-i.swich.va) THEN
+            CALL rob.grip_0(FALSE)
+        ELSE
+            CALL rob.grip_1(FALSE)
+        END
+
+
+        IF SIG(-i.po.switch) THEN
+
+            APPROS pick.loc[0], 50
+            TIMER (1) = 0
+            MOVES pick.loc[0]
+            ;BREAK
+
+
+; Actuate the gripper and depart
+
+;            IF SIG(-i.swich.va) THEN
+;                CALL rob.grip_0(FALSE)
+;            ELSE
+;                CALL rob.grip_1(FALSE)
+;            END
+
+            SIGNAL -o.place.down
+            SIGNAL o.pick.up
+;            WAIT.EVENT , 0.2
+
+            APPROS pick.loc[0], 50
+            TYPE " pick_1.appro = ", TIMER(1)
+            SIGNAL -o.pick.up
+
+        ELSE
+
+            APPROS pick.loc[1], 50
+            TIMER (1) = 0
+            MOVES pick.loc[1]
+            ;BREAK
+
+; Actuate the gripper and depart
+
+            IF SIG(-i.swich.va) THEN
+                CALL rob.grip_0(FALSE)
+            ELSE
+                CALL rob.grip_1(FALSE)
+            END
+
+            SIGNAL -o.place.down
+            SIGNAL o.pick.up
+            WAIT.EVENT , 0.1
+
+            APPROS pick.loc[1], 50
+            TYPE " pick_2.appro = ", TIMER(1)
+            SIGNAL -o.pick.up
+
+        END
+
+
+
+        IF (NOT SIG(i.vacuum.sen[1]) OR NOT SIG(i.vacuum.sen[2]) OR NOT SIG(i.vacuum.sen[3]) OR NOT SIG(i.vacuum.sen[4]) OR NOT SIG(i.vacuum.sen[5])) THEN
+            SIGNAL o.vacuum.error
+        END
+
+
+
+
+         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;        IF (NOT SIG(i.vacuum.sen[1]) OR NOT SIG(i.vacuum.sen[2]) OR NOT SIG(i.vacuum.sen[3]) OR NOT SIG(i.vacuum.sen[4]) OR NOT SIG(i.vacuum.sen[5])) THEN
+;            DO
+;                RELEASE
+;                MOVES safe.loc[0]
+;                CALL rob.grip_0(TRUE)
+;                vac.off.count = vac.off.count+1
+;                IF vac.off.count >= 3 THEN
+;                    SIGNAL o.rob.error
+;                    SIGNAL -o.rob.run
+;                    HALT
+;                END
+;                GOTO 50
+;            UNTIL SIG(i.vacuum.sen[1]) AND SIG(i.vacuum.sen[2]) AND SIG(i.vacuum.sen[3]) AND SIG(i.vacuum.sen[4]) AND SIG(i.vacuum.sen[5])
+;        END
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+ 100    RETURN
+.END
